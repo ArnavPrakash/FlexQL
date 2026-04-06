@@ -1,0 +1,10 @@
+bin/
+build/
+data/**/*.dat
+data/**/*.idx
+data/**/*.schema
+data/**/*.log
+*.o
+*.a
+*.so
+.DS_Store
