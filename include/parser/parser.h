@@ -10,13 +10,16 @@ namespace parser {
 
 enum class ASTNodeType {
     CREATE_TABLE,
+    CREATE_DATABASE, // db_name stored in ASTNode::table_name
     INSERT,
     BATCH_INSERT,
     SELECT,
-    SELECT_JOIN
+    SELECT_JOIN,
+    SHOW_DATABASES,
+    USE_DATABASE,   // db_name stored in ASTNode::table_name
 };
 
-enum class Operator { EQUALS, GT };
+enum class Operator { EQUALS, GT, LT, GTE, LTE };
 
 struct ColumnDef {
     std::string name;

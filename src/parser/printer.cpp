@@ -65,9 +65,16 @@ std::string ast_print(const ASTNode& ast) {
             }
             
             if (ast.where_clause) {
-                ss << " WHERE " << col_ref_to_str(ast.where_clause->column) 
-                   << (ast.where_clause->op == Operator::EQUALS ? " = " : " > ")
-                   << val_to_str(ast.where_clause->value);
+                std::string op_str;
+                switch (ast.where_clause->op) {
+                    case Operator::EQUALS: op_str = " = "; break;
+                    case Operator::GT:     op_str = " > "; break;
+                    case Operator::LT:     op_str = " < "; break;
+                    case Operator::GTE:    op_str = " >= "; break;
+                    case Operator::LTE:    op_str = " <= "; break;
+                }
+                ss << " WHERE " << col_ref_to_str(ast.where_clause->column)
+                   << op_str << val_to_str(ast.where_clause->value);
             }
             break;
     }

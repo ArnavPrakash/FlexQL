@@ -63,7 +63,7 @@ static std::unique_ptr<ASTNode> parse_create_table(ParserState& st) {
     auto ast = std::make_unique<ASTNode>();
     ast->type = ASTNodeType::CREATE_TABLE;
     
-    if (!st.match(TokenType::KW_TABLE)) { st.error("Expected TABLE after CREATE"); return nullptr; }
+    if (!st.match(TokenType::KW_TABLE)) { st.error("Expected TABLE or DATABASE after CREATE"); return nullptr; }
     
     const Token& t_name = st.advance();
     if (t_name.type != TokenType::IDENTIFIER) { st.error("Expected table name"); return nullptr; }
@@ -106,6 +106,21 @@ static std::unique_ptr<ASTNode> parse_create_table(ParserState& st) {
     
     if (!st.match(TokenType::PUNCT_CLOSE_PAREN)) { st.error("Expected ')'"); return nullptr; }
     return ast;
+}
+
+static std::unique_ptr<ASTNode> parse_create(ParserState& st) {
+    if (st.match(TokenType::KW_DATABASE)) {
+        const Token& name_tok = st.advance();
+        if (name_tok.type != TokenType::IDENTIFIER) {
+            st.error("Expected database name after CREATE DATABASE");
+            return nullptr;
+        }
+        auto ast = std::make_unique<ASTNode>();
+        ast->type = ASTNodeType::CREATE_DATABASE;
+        ast->table_name = name_tok.value;
+        return ast;
+    }
+    return parse_create_table(st);
 }
 
 static std::unique_ptr<ASTNode> parse_insert(ParserState& st) {
@@ -192,10 +207,16 @@ static std::unique_ptr<ASTNode> parse_select(ParserState& st) {
         
         if (st.match(TokenType::PUNCT_EQUALS)) {
             ast->where_clause->op = Operator::EQUALS;
+        } else if (st.match(TokenType::PUNCT_GTE)) {
+            ast->where_clause->op = Operator::GTE;
         } else if (st.match(TokenType::PUNCT_GT)) {
             ast->where_clause->op = Operator::GT;
+        } else if (st.match(TokenType::PUNCT_LTE)) {
+            ast->where_clause->op = Operator::LTE;
+        } else if (st.match(TokenType::PUNCT_LT)) {
+            ast->where_clause->op = Operator::LT;
         } else {
-            st.error("Expected '=' or '>' in WHERE"); return nullptr;
+            st.error("Expected '=', '>', '<', '>=' or '<=' in WHERE"); return nullptr;
         }
         
         const Token& v_tok = st.advance();
@@ -208,6 +229,32 @@ static std::unique_ptr<ASTNode> parse_select(ParserState& st) {
         }
     }
     
+    return ast;
+}
+
+static std::unique_ptr<ASTNode> parse_show(ParserState& st) {
+    if (!st.match(TokenType::KW_DATABASES)) {
+        st.error("Expected DATABASES after SHOW");
+        return nullptr;
+    }
+    auto ast = std::make_unique<ASTNode>();
+    ast->type = ASTNodeType::SHOW_DATABASES;
+    return ast;
+}
+
+static std::unique_ptr<ASTNode> parse_use(ParserState& st) {
+    if (!st.match(TokenType::KW_DATABASE)) {
+        st.error("Expected DATABASE after USE");
+        return nullptr;
+    }
+    const Token& name_tok = st.advance();
+    if (name_tok.type != TokenType::IDENTIFIER) {
+        st.error("Expected database name after USE DATABASE");
+        return nullptr;
+    }
+    auto ast = std::make_unique<ASTNode>();
+    ast->type = ASTNodeType::USE_DATABASE;
+    ast->table_name = name_tok.value; // reused as db_name
     return ast;
 }
 
@@ -227,11 +274,15 @@ std::unique_ptr<ASTNode> parser_parse(const std::vector<Token>& tokens, std::str
     std::unique_ptr<ASTNode> ast = nullptr;
     
     if (st.match(TokenType::KW_CREATE)) {
-        ast = parse_create_table(st);
+        ast = parse_create(st);
     } else if (st.match(TokenType::KW_INSERT)) {
         ast = parse_insert(st);
     } else if (st.match(TokenType::KW_SELECT)) {
         ast = parse_select(st);
+    } else if (st.match(TokenType::KW_SHOW)) {
+        ast = parse_show(st);
+    } else if (st.match(TokenType::KW_USE)) {
+        ast = parse_use(st);
     } else {
         st.error("Unrecognized statement type");
     }

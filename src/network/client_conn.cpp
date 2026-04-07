@@ -1,6 +1,7 @@
 #include "network/client_conn.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 
@@ -12,6 +13,10 @@ int net_client_connect(const std::string& host, int port) {
     if (sock < 0) {
         return -1;
     }
+
+    // Disable Nagle — send each frame immediately without buffering
+    int flag = 1;
+    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
 
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;

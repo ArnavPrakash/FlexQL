@@ -8,7 +8,7 @@ using namespace flexql;
 
 int main(int argc, char** argv) {
     std::string host = "127.0.0.1";
-    int port = 5432;
+    int port = 9000;
     
     int fd = network::net_client_connect(host, port);
     if (fd < 0) {
@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
         std::cout << "flexql> ";
         if (!std::getline(std::cin, sql)) break;
         if (sql.empty()) continue;
-        if (sql == "exit" || sql == "quit") break;
+        if (sql == "exit" || sql == "quit" || sql == ".exit") break;
         
         if (network::net_send_string_frame(fd, sql) < 0) {
             std::cerr << "Disconnected from server\n";

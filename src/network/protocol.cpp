@@ -1,5 +1,6 @@
 #include "network/protocol.h"
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <unistd.h>
 #include <cstring>
 #include <arpa/inet.h>
@@ -37,20 +38,24 @@ static ssize_t read_all(int fd, void* buf, size_t len) {
 
 int net_send_frame(int fd, const std::vector<uint8_t>& data) {
     uint32_t len = htonl(static_cast<uint32_t>(data.size()));
-    if (write_all(fd, &len, sizeof(len)) < 0) return -1;
-    if (!data.empty()) {
-        if (write_all(fd, data.data(), data.size()) < 0) return -1;
-    }
-    return 0;
+    struct iovec iov[2];
+    iov[0].iov_base = &len;
+    iov[0].iov_len  = sizeof(len);
+    iov[1].iov_base = const_cast<uint8_t*>(data.data());
+    iov[1].iov_len  = data.size();
+    int iovcnt = data.empty() ? 1 : 2;
+    return writev(fd, iov, iovcnt) < 0 ? -1 : 0;
 }
 
 int net_send_string_frame(int fd, const std::string& data) {
     uint32_t len = htonl(static_cast<uint32_t>(data.size()));
-    if (write_all(fd, &len, sizeof(len)) < 0) return -1;
-    if (!data.empty()) {
-        if (write_all(fd, data.data(), data.size()) < 0) return -1;
-    }
-    return 0;
+    struct iovec iov[2];
+    iov[0].iov_base = &len;
+    iov[0].iov_len  = sizeof(len);
+    iov[1].iov_base = const_cast<char*>(data.data());
+    iov[1].iov_len  = data.size();
+    int iovcnt = data.empty() ? 1 : 2;
+    return writev(fd, iov, iovcnt) < 0 ? -1 : 0;
 }
 
 int net_recv_frame(int fd, std::vector<uint8_t>& out_data) {

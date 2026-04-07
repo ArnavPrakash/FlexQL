@@ -40,7 +40,8 @@ int main(int argc, char** argv) {
         pool.submit([client_fd, executor]() {
             std::string errmsg;
             std::string payload;
-            
+            query::ClientSession session;   // per-connection state
+
             while (true) {
                 if (network::net_recv_string_frame(client_fd, payload) < 0) {
                     break;
@@ -55,15 +56,19 @@ int main(int argc, char** argv) {
                     response = "ERROR: " + errmsg;
                 } else {
                     flexql::ResultSet res;
-                    ErrorCode code = executor->executor_run(*ast, payload, res, errmsg);
+                    ErrorCode code = executor->executor_run(*ast, payload, res, errmsg, session);
                     
                     if (code != ErrorCode::OK) {
                         response = "ERROR: " + errmsg;
                     } else {
                         if (ast->type == parser::ASTNodeType::CREATE_TABLE) {
                             response = "CREATE TABLE OK";
+                        } else if (ast->type == parser::ASTNodeType::CREATE_DATABASE) {
+                            response = "CREATE DATABASE OK";
                         } else if (ast->type == parser::ASTNodeType::INSERT || ast->type == parser::ASTNodeType::BATCH_INSERT) {
                             response = "INSERT OK";
+                        } else if (ast->type == parser::ASTNodeType::USE_DATABASE) {
+                            response = "Database changed";
                         } else {
                             response = "COLS: " + std::to_string(res.column_names.size()) + "\n";
                             for (const auto& c : res.column_names) {

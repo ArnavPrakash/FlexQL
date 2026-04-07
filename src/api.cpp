@@ -17,6 +17,14 @@ extern "C" int flexql_open(const char* host, int port, FlexQL** db) {
     if (fd < 0) return FLEXQL_ERROR;
     
     *db = new FlexQL{fd};
+
+    // Auto-select the default database so existing clients work without USE DATABASE
+    std::string use_sql = "USE DATABASE default";
+    if (flexql::network::net_send_string_frame(fd, use_sql) < 0) return FLEXQL_ERROR;
+    std::string response;
+    if (flexql::network::net_recv_string_frame(fd, response) < 0) return FLEXQL_ERROR;
+    if (response.substr(0, 6) == "ERROR:") return FLEXQL_ERROR;
+
     return FLEXQL_OK;
 }
 

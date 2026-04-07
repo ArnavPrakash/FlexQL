@@ -84,3 +84,31 @@ TEST(ParserTest, RoundTrip) {
     std::string printed = ast_print(*ast);
     EXPECT_EQ(printed, "SELECT a, b FROM t WHERE a = 5");
 }
+
+TEST(ParserTest, ParseShowDatabases) {
+    std::string sql = "SHOW DATABASES";
+    auto tokens = lexer_tokenize(sql);
+    std::string errmsg;
+    auto ast = parser_parse(tokens, errmsg);
+    ASSERT_NE(ast, nullptr) << errmsg;
+    EXPECT_EQ(ast->type, ASTNodeType::SHOW_DATABASES);
+}
+
+TEST(ParserTest, ParseUseDatabase) {
+    std::string sql = "USE DATABASE mydb";
+    auto tokens = lexer_tokenize(sql);
+    std::string errmsg;
+    auto ast = parser_parse(tokens, errmsg);
+    ASSERT_NE(ast, nullptr) << errmsg;
+    EXPECT_EQ(ast->type, ASTNodeType::USE_DATABASE);
+    EXPECT_EQ(ast->table_name, "mydb");
+}
+
+TEST(ParserTest, ParseUseDatabaseMissingName) {
+    std::string sql = "USE DATABASE";
+    auto tokens = lexer_tokenize(sql);
+    std::string errmsg;
+    auto ast = parser_parse(tokens, errmsg);
+    EXPECT_EQ(ast, nullptr);
+    EXPECT_FALSE(errmsg.empty());
+}

@@ -1,6 +1,7 @@
 #include "network/network.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <unistd.h>
 #include <stdexcept>
 #include <iostream>
@@ -43,6 +44,11 @@ int net_server_accept(int server_fd) {
     socklen_t client_len = sizeof(client_addr);
     
     int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+    if (client_fd >= 0) {
+        // Disable Nagle on accepted socket — responses go out immediately
+        int flag = 1;
+        setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
+    }
     return client_fd;
 }
 

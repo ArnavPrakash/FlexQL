@@ -29,8 +29,12 @@ std::vector<Token> lexer_tokenize(const std::string& sql) {
         {"INNER", TokenType::KW_INNER},
         {"JOIN", TokenType::KW_JOIN},
         {"ON", TokenType::KW_ON},
-        {"DECIMAL", TokenType::KW_DECIMAL},
-        {"VARCHAR", TokenType::KW_VARCHAR}
+        {"DECIMAL",   TokenType::KW_DECIMAL},
+        {"VARCHAR",   TokenType::KW_VARCHAR},
+        {"SHOW",      TokenType::KW_SHOW},
+        {"DATABASES", TokenType::KW_DATABASES},
+        {"USE",       TokenType::KW_USE},
+        {"DATABASE",  TokenType::KW_DATABASE}
     };
 
     while (i < len) {
@@ -83,10 +87,25 @@ std::vector<Token> lexer_tokenize(const std::string& sql) {
                 case ')': type = TokenType::PUNCT_CLOSE_PAREN; break;
                 case ',': type = TokenType::PUNCT_COMMA; break;
                 case '=': type = TokenType::PUNCT_EQUALS; break;
-                case '>': type = TokenType::PUNCT_GT; break;
                 case '.': type = TokenType::PUNCT_DOT; break;
                 case ';': type = TokenType::PUNCT_SEMI; break;
                 case '*': type = TokenType::PUNCT_STAR; break;
+                case '>':
+                    if (i + 1 < len && sql[i + 1] == '=') {
+                        tokens.push_back({TokenType::PUNCT_GTE, ">=", start});
+                        i += 2;
+                        continue;
+                    }
+                    type = TokenType::PUNCT_GT;
+                    break;
+                case '<':
+                    if (i + 1 < len && sql[i + 1] == '=') {
+                        tokens.push_back({TokenType::PUNCT_LTE, "<=", start});
+                        i += 2;
+                        continue;
+                    }
+                    type = TokenType::PUNCT_LT;
+                    break;
             }
             
             tokens.push_back({type, std::string(1, c), start});

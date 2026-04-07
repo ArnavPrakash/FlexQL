@@ -52,6 +52,10 @@ public:
     // Appends row and returns disk offset. 
     // Offset structure: (page_id * PAGE_SIZE) + page_byte_offset
     uint64_t insert_row(const Row& row);
+
+    // Inserts all rows sequentially, flushes dirty pages once at the end.
+    // Returns a vector of disk offsets (one per row, in insertion order).
+    std::vector<uint64_t> bulk_insert_rows(const std::vector<flexql::Row>& rows);
     
     // Iterates all pages and all rows, invoking callback
     void scan(std::function<bool(const Row&)> callback);

@@ -17,6 +17,9 @@ enum class TokenType {
     PUNCT_COMMA,        // ,
     PUNCT_EQUALS,       // =
     PUNCT_GT,           // >
+    PUNCT_LT,           // <
+    PUNCT_GTE,          // >=
+    PUNCT_LTE,          // <=
     PUNCT_DOT,          // .
     PUNCT_SEMI,         // ;
     PUNCT_STAR,         // *
@@ -35,6 +38,10 @@ enum class TokenType {
     KW_ON,
     KW_DECIMAL,
     KW_VARCHAR,
+    KW_SHOW,
+    KW_DATABASES,
+    KW_USE,
+    KW_DATABASE,
 
     LEX_ERROR,
     END_OF_FILE

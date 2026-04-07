@@ -4,13 +4,16 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
+#include "common/flexql_types.h"
+#include "storage/schema.h"
 
 namespace flexql {
 namespace storage {
 
 enum class WALOpType : uint8_t {
     INSERT = 1,
-    CREATE_TABLE = 2
+    CREATE_TABLE = 2,
+    BATCH_INSERT = 3
 };
 
 struct WALRecord {
@@ -32,6 +35,13 @@ public:
     
     // Returns disk offset pointing to the committed_flag
     uint64_t append_record(const WALRecord& record);
+
+    // Serializes all rows into a single WALRecord payload and writes it.
+    // Does NOT call fsync — caller calls commit_record() to fsync.
+    // Returns the status_offset (same semantics as append_record).
+    uint64_t append_batch_record(const std::string& table_name,
+                                 const std::vector<flexql::Row>& rows,
+                                 const std::shared_ptr<flexql::storage::Schema>& schema);
     
     // Commits a record via its disk offset computed during append
     bool commit_record(uint64_t status_offset);
